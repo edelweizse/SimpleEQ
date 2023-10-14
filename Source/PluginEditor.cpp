@@ -44,7 +44,7 @@ void SimpleEQAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillAll (Colours::black);
 
     auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getWidth() * 0.33);
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
 
     auto w = responseArea.getWidth();
 
