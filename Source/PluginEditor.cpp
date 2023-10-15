@@ -379,12 +379,21 @@ void ResponseCurveComponent::resized()
 
         Rectangle<int> r;
         r.setSize(textWidth, fontHeight);
-        //r.setX(getWidth() - textWidth);
-        r.setX(0);
+        r.setX(getWidth() - textWidth);   // right
+        //r.setX(0);                          // left
         r.setCentre(r.getCentreX(), y);
 
 
         g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u) : Colours::lightgrey);
+        g.drawFittedText(str, r, juce::Justification::centred, 1);
+
+        str.clear();
+        str << (gDb - 24);
+
+        r.setX(1);
+        textWidth = g.getCurrentFont().getStringWidth(str);
+        r.setSize(textWidth, fontHeight);
+        g.setColour(Colours::lightgrey);
         g.drawFittedText(str, r, juce::Justification::centred, 1);
     }
 }
