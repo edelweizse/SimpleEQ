@@ -11,8 +11,6 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-
-
 enum FFTOrder
 {
     order2048 = 11,
@@ -128,20 +126,16 @@ struct AnalyzerPathGenerator
 
         auto y = map(renderData[0]);
 
-        //jassert(!std::isnan(y) && !std::isinf(y));
-
         if (std::isnan(y) || std::isinf(y))
             y = bottom;
 
         p.startNewSubPath(0, y);
 
-        const int pathResolution = 2; //you can draw line-to's every 'pathResolution' pixels.
+        const int pathResolution = 2; 
 
         for (int binNum = 1; binNum < numBins; binNum += pathResolution)
         {
             y = map(renderData[binNum]);
-
-            //jassert(!std::isnan(y) && !std::isinf(y));
 
             if (!std::isnan(y) && !std::isinf(y))
             {
@@ -168,7 +162,7 @@ private:
     Fifo<PathType> pathFifo;
 };
 
-struct LookAndFeel: juce::LookAndFeel_V4
+struct LookAndFeel : juce::LookAndFeel_V4
 {
     void drawRotarySlider(juce::Graphics&,
         int x, int y, int width, int height,
@@ -177,19 +171,19 @@ struct LookAndFeel: juce::LookAndFeel_V4
         float rotaryEndAngle,
         juce::Slider&) override;
 
-    void drawToggleButton(juce::Graphics &g, 
-        juce::ToggleButton & toggleButton , 
-        bool shouldDrawButtonAsHighlighted, 
+    void drawToggleButton(juce::Graphics& g,
+        juce::ToggleButton& toggleButton,
+        bool shouldDrawButtonAsHighlighted,
         bool shouldDrawButtonAsDown) override;
 };
 
-struct RotarySliderWithLabels: juce::Slider
+struct RotarySliderWithLabels : juce::Slider
 {
     RotarySliderWithLabels(juce::RangedAudioParameter& rap, const juce::String& unitSuffix) :
-	juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
-        juce::Slider::TextEntryBoxPosition::NoTextBox),
-    param(&rap),
-    suffix(unitSuffix)
+        juce::Slider(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag,
+            juce::Slider::TextEntryBoxPosition::NoTextBox),
+        param(&rap),
+        suffix(unitSuffix)
     {
         setLookAndFeel(&lnf);
     }
@@ -207,14 +201,13 @@ struct RotarySliderWithLabels: juce::Slider
 
     juce::Array<LabelPos> labels;
 
-
     void paint(juce::Graphics& g) override;
     juce::Rectangle<int> getSliderBounds() const;
     int getTextHeight() const { return 14; }
     juce::String getDisplayString() const;
-
 private:
     LookAndFeel lnf;
+
     juce::RangedAudioParameter* param;
     juce::String suffix;
 };
@@ -222,7 +215,7 @@ private:
 struct PathProducer
 {
     PathProducer(SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>& scsf) :
-    leftChannelFifo(&scsf)
+        leftChannelFifo(&scsf)
     {
         leftChannelFFTDataGenerator.changeOrder(FFTOrder::order2048);
         monoBuffer.setSize(1, leftChannelFFTDataGenerator.getFFTSize());
@@ -241,12 +234,13 @@ private:
     juce::Path leftChannelFFTPath;
 };
 
-struct ResponseCurveComponent: juce::Component,
+struct ResponseCurveComponent : juce::Component,
     juce::AudioProcessorParameter::Listener,
     juce::Timer
 {
     ResponseCurveComponent(SimpleEQAudioProcessor&);
     ~ResponseCurveComponent();
+
     void parameterValueChanged(int parameterIndex, float newValue) override;
 
     void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override { }
@@ -254,7 +248,6 @@ struct ResponseCurveComponent: juce::Component,
     void timerCallback() override;
 
     void paint(juce::Graphics& g) override;
-
     void resized() override;
 
     void toggleAnalysisEnablement(bool enabled)
@@ -263,23 +256,35 @@ struct ResponseCurveComponent: juce::Component,
     }
 private:
     SimpleEQAudioProcessor& audioProcessor;
+
+    bool shouldShowFFTAnalysis = true;
+
     juce::Atomic<bool> parametersChanged{ false };
+
     MonoChain monoChain;
+
+    void updateResponseCurve();
+
+    juce::Path responseCurve;
 
     void updateChain();
 
-    juce::Image background;
+    void drawBackgroundGrid(juce::Graphics& g);
+    void drawTextLabels(juce::Graphics& g);
+
+    std::vector<float> getFrequencies();
+    std::vector<float> getGains();
+    std::vector<float> getXs(const std::vector<float>& freqs, float left, float width);
 
     juce::Rectangle<int> getRenderArea();
 
     juce::Rectangle<int> getAnalysisArea();
 
     PathProducer leftPathProducer, rightPathProducer;
-
-    bool shouldShowFFTAnalysis = true;
 };
+//==============================================================================
+struct PowerButton : juce::ToggleButton { };
 
-struct PowerButton : juce::ToggleButton { } ;
 struct AnalyzerButton : juce::ToggleButton
 {
     void resized() override
@@ -296,34 +301,30 @@ struct AnalyzerButton : juce::ToggleButton
 
         for (auto x = insetRect.getX() + 1; x < insetRect.getRight(); x += 2)
         {
-            randomPath.lineTo(x, insetRect.getY() + insetRect.getHeight() * r.nextFloat());
+            randomPath.lineTo(x,
+                insetRect.getY() + insetRect.getHeight() * r.nextFloat());
         }
     }
+
     juce::Path randomPath;
 };
-
-//==============================================================================
 /**
 */
-class SimpleEQAudioProcessorEditor  : public juce::AudioProcessorEditor
+class SimpleEQAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
-    SimpleEQAudioProcessorEditor (SimpleEQAudioProcessor&);
+    SimpleEQAudioProcessorEditor(SimpleEQAudioProcessor&);
     ~SimpleEQAudioProcessorEditor() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
 
-    
-
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
     SimpleEQAudioProcessor& audioProcessor;
 
-    RotarySliderWithLabels
-        peakFreqSlider,
+
+    RotarySliderWithLabels peakFreqSlider,
         peakGainSlider,
         peakQualitySlider,
         lowCutFreqSlider,
@@ -337,31 +338,26 @@ private:
     using Attachment = APVTS::SliderAttachment;
 
     Attachment peakFreqSliderAttachment,
-	        peakGainSliderAttachment,
-	        peakQualitySliderAttachment,
-	        lowCutFreqSliderAttachment,
-	        highCutFreqSliderAttachment,
-	        lowCutSlopeSliderAttachment,
-	        highCutSlopeSliderAttachment;
-
-    PowerButton
-        lowcutBypassedButton,
-        peakBypassedButton,
-        highcutBypassedButton;
-
-    AnalyzerButton
-        analyzerEnabledButton;
-
-    using ButtonAttachment = APVTS::ButtonAttachment;
-    ButtonAttachment
-        lowcutBypassedButtonAttachment,
-        peakBypassedButtonAttachment,
-        highcutBypassedButtonAttachment,
-        analyzerEnabledButtonAttachment;
+        peakGainSliderAttachment,
+        peakQualitySliderAttachment,
+        lowCutFreqSliderAttachment,
+        highCutFreqSliderAttachment,
+        lowCutSlopeSliderAttachment,
+        highCutSlopeSliderAttachment;
 
     std::vector<juce::Component*> getComps();
 
+    PowerButton lowcutBypassButton, peakBypassButton, highcutBypassButton;
+    AnalyzerButton analyzerEnabledButton;
+
+    using ButtonAttachment = APVTS::ButtonAttachment;
+
+    ButtonAttachment lowcutBypassButtonAttachment,
+        peakBypassButtonAttachment,
+        highcutBypassButtonAttachment,
+        analyzerEnabledButtonAttachment;
+
     LookAndFeel lnf;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SimpleEQAudioProcessorEditor)
 };
